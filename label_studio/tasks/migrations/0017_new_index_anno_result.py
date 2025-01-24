@@ -14,7 +14,7 @@ def forwards(apps, schema_editor):
         return
 
     schema_editor.execute(
-        'create index concurrently tasks_annotations_result_idx2 '
+        'create index tasks_annotations_result_idx2 '
         'on task_completion using gin (cast(result as text) gin_trgm_ops);'
     )
 

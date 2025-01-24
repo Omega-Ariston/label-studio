@@ -8,7 +8,7 @@ IS_SQLITE = settings.DJANGO_DB == settings.DJANGO_DB_SQLITE
 if IS_SQLITE:
     from django.db.migrations import AddIndex
 else:
-    from django.contrib.postgres.operations import AddIndexConcurrently as AddIndex
+    from django.contrib.postgres.operations import AddIndex
 
 
 class Migration(migrations.Migration):

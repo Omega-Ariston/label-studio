@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 def async_index_creation():
     from django.db import connection
     with connection.schema_editor(atomic=False) as schema_editor:
-        schema_editor.execute('create index concurrently if not exists tasks_annotations_result_proj_gin '
+        schema_editor.execute('create index if not exists tasks_annotations_result_proj_gin '
             'on task_completion using gin (project_id, cast(result as text) gin_trgm_ops);'
         )
 

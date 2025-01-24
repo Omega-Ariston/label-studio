@@ -9,19 +9,19 @@ logger = logging.getLogger(__name__)
 def async_index_creation():
     from django.db import connection
     create_index_sql_1 = (
-        'CREATE INDEX CONCURRENTLY IF NOT EXISTS task_comple_project_0bc0be_idx '
+        'create index IF NOT EXISTS task_comple_project_0bc0be_idx '
         'ON task_completion (project_id, completed_by_id);'
     )
 
     create_index_sql_2 = (
-        'CREATE INDEX CONCURRENTLY IF NOT EXISTS task_comple_task_id_a6bdec_idx '
+        'create index IF NOT EXISTS task_comple_task_id_a6bdec_idx '
         'ON task_completion (task_id, id);'
     )
 
     with connection.schema_editor(atomic=False) as schema_editor:
         schema_editor.execute(create_index_sql_1)
         schema_editor.execute(create_index_sql_2)
-        logger.info('Indexes created concurrently on annotation model')
+        logger.info('Indexes created on annotation model')
 
 def forwards(apps, schema_editor):
     database_vendor = schema_editor.connection.vendor

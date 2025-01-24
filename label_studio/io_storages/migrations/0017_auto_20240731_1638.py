@@ -16,7 +16,7 @@ migration_name = '0017_auto_20240731_1638'
 
 def create_index_sql(table_name, index_name, column_name):
     return f"""
-    CREATE INDEX CONCURRENTLY IF NOT EXISTS "{index_name}" ON "{table_name}" ("{column_name}");
+    create index IF NOT EXISTS "{index_name}" ON "{table_name}" ("{column_name}");
     """
 
 def create_fk_sql(table_name, constraint_name, column_name, referenced_table, referenced_column):
@@ -27,7 +27,7 @@ def create_fk_sql(table_name, constraint_name, column_name, referenced_table, re
 
 def drop_index_sql(table_name, index_name, column_name):
     return f"""
-    DROP INDEX CONCURRENTLY IF EXISTS "{index_name}";
+    DROP INDEX IF EXISTS "{index_name}";
     """
 
 tables = [
