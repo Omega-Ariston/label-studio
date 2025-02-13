@@ -1,20 +1,36 @@
 """This file and its contents are licensed under the Apache License 2.0. Please see the included NOTICE for copyright information and LICENSE for a copy of the license.
 """
 import json
+import environ
 
 from core.settings.base import *  # noqa
 from core.utils.secret_key import generate_secret_key_if_missing
 
+env = environ.Env()
+
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = generate_secret_key_if_missing(BASE_DATA_DIR)
 
-DJANGO_DB = get_env('DJANGO_DB', DJANGO_DB_SQLITE)
-DATABASES = {'default': DATABASES_ALL[DJANGO_DB]}
+if "DATABASE_URL" in os.environ:
+    DATABASES = {
+        "default": {
+            **env.db("DATABASE_URL"),
+            "OPTIONS": {
+                "options": "-c search_path=label_studio"
+            }
+        },
+
+    }
+    DATABASES["default"]["ATOMIC_REQUESTS"] = True
+    DEFAULT_AUTO_FIELD = "django.db.models.AutoField"
+else:
+    DJANGO_DB = get_env('DJANGO_DB', DJANGO_DB_SQLITE)
+    DATABASES = {'default': DATABASES_ALL[DJANGO_DB]}
 
 MIDDLEWARE.append('organizations.middleware.DummyGetSessionMiddleware')
 MIDDLEWARE.append('core.middleware.UpdateLastActivityMiddleware')
-if INACTIVITY_SESSION_TIMEOUT_ENABLED:
-    MIDDLEWARE.append('core.middleware.InactivitySessionTimeoutMiddleWare')
+# if INACTIVITY_SESSION_TIMEOUT_ENABLED:
+#     MIDDLEWARE.append('core.middleware.InactivitySessionTimeoutMiddleWare')
 
 ADD_DEFAULT_ML_BACKENDS = False
 
