@@ -43,10 +43,11 @@ interface DropdownTriggerProps extends DropdownProps {
   closeOnClickOutside?: boolean;
   disabled?: boolean;
   className?: string;
+  triggerType?: 'click' | 'right-click';
 }
 
 export const DropdownTrigger = forwardRef<DropdownRef, DropdownTriggerProps>(
-  ({ tag, children, content, toggle, closeOnClickOutside = true, disabled = false, ...props }, ref) => {
+  ({ tag, children, content, toggle, closeOnClickOutside = true, triggerType = 'click', disabled = false, ...props }, ref) => {
     const dropdownRef = (ref ?? useRef<DropdownRef>()) as RefObject<DropdownRef>;
     const triggerEL = Children.only(children);
     const childset = useRef(new Set<DropdownContextValue>());
@@ -72,7 +73,7 @@ export const DropdownTrigger = forwardRef<DropdownRef, DropdownTriggerProps>(
     const handleClick = useCallback(
       (e) => {
         if (!closeOnClickOutside) return;
-        if (targetIsInsideDropdown(e.target)) return;
+        if (triggerType === 'click' && targetIsInsideDropdown(e.target)) return;
 
         dropdownRef.current?.close?.();
       },
@@ -83,8 +84,11 @@ export const DropdownTrigger = forwardRef<DropdownRef, DropdownTriggerProps>(
       (e) => {
         if (disabled) return;
 
-        const inDropdown = dropdownRef.current?.dropdown?.contains?.(e.target);
+        if (triggerType === 'right-click') {
+          e.preventDefault(); // Prevent default context menu
+        }
 
+        const inDropdown = dropdownRef.current?.dropdown?.contains?.(e.target);
         if (inDropdown) return e.stopPropagation();
 
         if (toggle === false) return dropdownRef?.current?.open();
@@ -107,9 +111,10 @@ export const DropdownTrigger = forwardRef<DropdownRef, DropdownTriggerProps>(
           }
         },
         className: cn("dropdown").elem("trigger").mix(props.className),
-        onClickCapture: handleToggle,
+        ...(triggerType === 'click' && { onClickCapture: handleToggle }),
+        ...(triggerType === 'right-click' && { onContextMenu: handleToggle }),
       };
-    }, [triggerEL, triggerRef, props.className, handleToggle]);
+    }, [triggerEL, triggerRef, props.className, handleToggle, triggerType]);
 
     const triggerClone = useMemo(() => {
       return cloneElement(triggerEL as any, cloneProps);
@@ -123,7 +128,11 @@ export const DropdownTrigger = forwardRef<DropdownRef, DropdownTriggerProps>(
 
     useEffect(() => {
       document.addEventListener("click", handleClick, { capture: true });
-      return () => document.removeEventListener("click", handleClick, { capture: true });
+      document.addEventListener("contextmenu", handleClick, { capture: true });
+      return () => {
+        document.removeEventListener("click", handleClick, { capture: true });
+        document.removeEventListener("contextmenu", handleClick, { capture: true });
+      }
     }, [handleClick]);
 
     const contextValue = useMemo((): DropdownContextValue => {
