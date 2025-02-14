@@ -430,6 +430,17 @@ export default types
       getEnv(self).events.invoke("entityCreate", region);
     },
 
+    isParentRegionOf(parentId, region) {
+      if (parentId.startsWith(region.parentID)) {
+        return true;
+      }
+      if (region.parentID) {
+        const parent = self.regions.find((r) => r.id.startsWith(region.parentID));
+        return parent && this.isParentRegionOf(parentId, parent);
+      }
+      return false;
+    },
+
     toggleSortOrder() {
       if (self.sortOrder === "asc") self.sortOrder = "desc";
       else self.sortOrder = "asc";

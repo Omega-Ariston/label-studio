@@ -17,6 +17,7 @@ import { IconWarning, LsSparks } from "../../../assets/icons";
 import { IconChevronLeft, IconEyeClosed, IconEyeOpened } from "../../../assets/icons/timeline";
 import { IconArrow } from "../../../assets/icons/tree";
 import { Tooltip } from "../../../common/Tooltip/Tooltip";
+import { Dropdown } from "../../../common/Dropdown/Dropdown";
 import Registry from "../../../core/Registry";
 import { PER_REGION_MODES } from "../../../mixins/PerRegionModes";
 import { Block, cn, Elem } from "../../../utils/bem";
@@ -29,6 +30,7 @@ import "./TreeView.scss";
 import ResizeObserver from "../../../utils/resize-observer";
 import type { EventDataNode, Key } from "rc-tree/es/interface";
 import { RegionLabel } from "./RegionLabel";
+import {Menu} from "../../../common/Menu/Menu";
 
 const { localStorage } = window;
 const localStoreName = "collapsed-label-pos";
@@ -283,6 +285,17 @@ const useEventHandlers = () => {
     }
   }, []);
 
+  const onRightClick = useCallback((evt) => {
+
+    const { node } = evt;
+    const self = node?.item;
+    if (!self?.annotation) return;
+    const selected = self.annotation.regionStore.selectedIds.includes(self.id)
+    if (!selected) {
+      self.annotation.selectArea(self);
+    }
+  }, []);
+
   // see onScroll for explanation
   const highlightedRef = useRef<any>();
   const onMouseEnter = useCallback(({ node }: any) => {
@@ -379,6 +392,7 @@ const useEventHandlers = () => {
     onMouseLeave,
     onDrop,
     onScroll,
+    onRightClick,
   };
 };
 
@@ -399,6 +413,43 @@ const RootTitle: FC<any> = observer(
   }) => {
     const hovered = item?.highlighted;
     const [collapsed, setCollapsed] = useState(false);
+    const { regions: regionStore } = useContext(OutlinerContext);
+
+    const notSelectedRegions = regionStore.regions.filter((region: any) => !regionStore.selectedIds.includes(region.id))
+
+    const selectedRegions = regionStore.regions.filter((region: any) => regionStore.selectedIds.includes(region.id))
+
+    const availableRegions = notSelectedRegions.filter((region: any) =>
+      selectedRegions.every((selectedRegion: any) => !regionStore.isParentRegionOf(selectedRegion.id, region))
+    );
+
+    const setParent = useCallback(
+      (parentId: any) => {
+        selectedRegions.forEach((region: any) => {
+          region.setParentID(parentId)
+        })
+      }, [selectedRegions],
+    );
+
+    const dropdownContent = useMemo(() => {
+      return (
+        availableRegions.length > 0 && (
+          <Menu size="medium">
+            <Elem className="dropdown-title">Set as parent</Elem>
+            {availableRegions.map((region: any) => {
+              const labelType = region.results[0].type
+              const labelName = region.results[0].value[labelType]
+              const idx = regionStore.regions.indexOf(region) + 1
+              return (
+                <Menu.Item key={region.id} onClick={() => setParent(region.id)}>
+                  {labelName} {idx}
+                </Menu.Item>
+              )
+            })}
+          </Menu>
+        )
+      )
+    }, [availableRegions, setParent]);
 
     const controls = useMemo(() => {
       if (!isArea) return [];
@@ -420,30 +471,32 @@ const RootTitle: FC<any> = observer(
 
     return (
       <Block name="outliner-item">
-        <Elem name="content">
-          {!props.isGroup && <Elem name="index">{props.idx + 1}</Elem>}
-          <Elem name="title">
-            {label}
-            {item?.text && <Elem name="text">{item.text.replace(/\\n/g, "\n")}</Elem>}
-            {item?.isDrawing && (
-              <Elem tag="span" name="incomplete">
-                <Tooltip title={`Incomplete ${item.type?.replace("region", "") ?? "region"}`}>
-                  <IconWarning />
-                </Tooltip>
-              </Elem>
-            )}
+        <Dropdown.Trigger content={dropdownContent} triggerType="right-click">
+          <Elem name="content">
+            {!props.isGroup && <Elem name="index">{props.idx + 1}</Elem>}
+            <Elem name="title">
+              {label}
+              {item?.text && <Elem name="text">{item.text.replace(/\\n/g, "\n")}</Elem>}
+              {item?.isDrawing && (
+                <Elem tag="span" name="incomplete">
+                  <Tooltip title={`Incomplete ${item.type?.replace("region", "") ?? "region"}`}>
+                    <IconWarning />
+                  </Tooltip>
+                </Elem>
+              )}
+            </Elem>
+            <RegionControls
+              hovered={hovered}
+              item={item}
+              entity={props.entity}
+              regions={props.children}
+              type={props.type}
+              collapsed={collapsed}
+              hasControls={hasControls && isArea}
+              toggleCollapsed={toggleCollapsed}
+            />
           </Elem>
-          <RegionControls
-            hovered={hovered}
-            item={item}
-            entity={props.entity}
-            regions={props.children}
-            type={props.type}
-            collapsed={collapsed}
-            hasControls={hasControls && isArea}
-            toggleCollapsed={toggleCollapsed}
-          />
-        </Elem>
+        </Dropdown.Trigger>
         {hasControls && isArea && (
           <Elem name="ocr">
             <RegionItemDesc
@@ -584,7 +637,6 @@ const RegionItemDesc: FC<RegionItemOCSProps> = observer(({ item, collapsed, setC
   const onClick = useCallback(
     (e) => {
       e.stopPropagation();
-
       if (!selected) {
         item.annotation.selectArea(item);
       }
