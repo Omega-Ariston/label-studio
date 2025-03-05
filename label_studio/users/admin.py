@@ -9,6 +9,7 @@ from organizations.models import Organization, OrganizationMember
 from projects.models import Project
 from tasks.models import Annotation, Prediction, Task
 from users.models import User
+from io_storages.s3.models import S3ImportStorage, S3ExportStorage
 
 
 class UserAdminShort(UserAdmin):
@@ -83,6 +84,8 @@ admin.site.register(Prediction)
 admin.site.register(Organization)
 admin.site.register(OrganizationMember, OrganizationMemberAdmin)
 admin.site.register(AsyncMigrationStatus, AsyncMigrationStatusAdmin)
+admin.site.register(S3ImportStorage)
+admin.site.register(S3ExportStorage)
 
 # remove unused django groups
 admin.site.unregister(Group)
