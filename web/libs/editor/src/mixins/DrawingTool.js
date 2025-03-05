@@ -406,7 +406,7 @@ const MultipleClicksDrawingTool = DrawingTool.named("MultipleClicksMixin")
         lastEvent = MOUSE_DOWN_EVENT;
       },
       mouseupEv(ev, [x, y]) {
-        if (lastEvent === MOUSE_DOWN_EVENT && self.comparePointsWithThreshold(lastPoint, { x, y })) {
+        if (lastEvent === MOUSE_DOWN_EVENT && !self.comparePointsWithThreshold(lastPoint, { x, y })) {
           self._clickEv(ev, [x, y]);
           lastEvent = MOUSE_UP_EVENT;
         }
